@@ -73,7 +73,7 @@ endif()
 
 set(PKEAPPS "")
 if ( BUILD_EXAMPLES)
-	file (GLOB PKE_EXAMPLES_SRC_FILES CONFIGURE_DEPENDS examples/*.cpp)
+	file (GLOB PKE_EXAMPLES_SRC_FILES CONFIGURE_DEPENDS examples/*.cpp capstone/*.cpp)
 	foreach (app ${PKE_EXAMPLES_SRC_FILES})
 		get_filename_component ( exe ${app} NAME_WE )
 		add_executable ( ${exe} ${app} )
