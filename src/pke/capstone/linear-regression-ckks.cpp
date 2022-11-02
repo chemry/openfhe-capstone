@@ -39,16 +39,16 @@
 
 using namespace lbcrypto;
 
-#define MAX_ENTRY 4000
-#define INC_FACTOR 100
+#define MAX_ENTRY 16384
+#define INC_FACTOR 10000
 
 const char* file_small = "/afs/andrew.cmu.edu/usr24/jiachend/public/cleaned_small_user_data.csv";
 
 typedef struct {
     std::vector<int> id;
     std::vector<std::string> name;
-    std::vector<int64_t> age;
-    std::vector<int64_t> income;
+    std::vector<double> age;
+    std::vector<double> income;
     size_t size;
 } data_t;
 
@@ -110,8 +110,8 @@ void readFile(const char* filename, data_t *data) {
     while(line.size() == fields && data->size < MAX_ENTRY) {
         data->id.push_back(std::stoi(line[0]));
         data->name.push_back(line[1]);
-        data->age.push_back(std::stoi(line[2]));
-        data->income.push_back(std::stoi(line[3]) / INC_FACTOR);
+        data->age.push_back(std::stod(line[2]) / INC_FACTOR);
+        data->income.push_back(std::stod(line[3]) / INC_FACTOR);
         data->size++;
         line = getNextLine(myfile);
     }
@@ -119,19 +119,17 @@ void readFile(const char* filename, data_t *data) {
 }
 
 int main() {
-    std::cout << "OpenFHE with BFV" << std::endl;
-
     data_t *data = new data_t;
     init_data(data);
-    for(int i = 0; i < 10; i++)
+    for(int i = 0; i < 100; i++)
         readFile(file_small, data);
     
     std::cout << "DATA SIZE: " << data->size << std::endl;
 
-    usint batch_size = MAX_ENTRY;
+    usint batch_size = data->size;
 
     // Sample Program: Step 1 - Set CryptoContext
-    CCParams<CryptoContextBFVRNS> parameters;
+    CCParams<CryptoContextCKKSRNS> parameters;
     /**
      * @brief We want to use a very large prime so that every intermediate
      * result will not be moduled? As trying a small module produce incorrect
@@ -145,16 +143,17 @@ int main() {
      */
     // TODO: 
     // Dig into more about what this is about?
-    parameters.SetPlaintextModulus(140737471578113);
     // parameters.SetPlaintextModulus(536903681);
     parameters.SetBatchSize(batch_size);
     // We have at most 3 multiplication depth for linear regression.. I guess?
     parameters.SetMultiplicativeDepth(3);
-    parameters.SetScalingModSize(50);
-    parameters.SetMaxRelinSkDeg(3);
+    parameters.SetScalingModSize(52);
+    parameters.SetRingDim(32768);
     
-
     CryptoContext<DCRTPoly> cc = GenCryptoContext(parameters);
+    
+    std::cout << "CKKS scheme is using ring dimension " << cc->GetRingDimension() << std::endl << std::endl;
+
     // Enable features
     cc->Enable(PKE);
     cc->Enable(KEYSWITCH);
@@ -178,10 +177,10 @@ int main() {
     TimeVar t;
     TIC(t);
     // Sample Program: Step 3 - Encryption
-    std::cout << "\nEncrypting plaintexts..." << std::endl;
+    std::cout << "Encrypting plaintexts..." << std::endl;
     // Plaint text for age and income
-    Plaintext pt_age    = cc->MakePackedPlaintext(data->age);
-    Plaintext pt_income = cc->MakePackedPlaintext(data->income);
+    Plaintext pt_age    = cc->MakeCKKSPackedPlaintext(data->age);
+    Plaintext pt_income = cc->MakeCKKSPackedPlaintext(data->income);
     /**
      * @brief A tricky way to place a plain text integer inside
      * calculation, as it throws NotImplmentedError if we directly
@@ -190,14 +189,14 @@ int main() {
      * @todo Try a better way to do multiplication between ciphertext
      * and plain text.
      */
-    std::vector<int64_t> size_int = {MAX_ENTRY};
-    Plaintext pt_size   = cc->MakePackedPlaintext(size_int);
+    std::vector<double> size_double(MAX_ENTRY, batch_size);
+    Plaintext pt_size   = cc->MakeCKKSPackedPlaintext(size_double);
     
     // The encoded vectors are encrypted
     auto ct_age    = cc->Encrypt(keyPair.publicKey, pt_age);
     auto ct_income = cc->Encrypt(keyPair.publicKey, pt_income);
     auto ct_size   = cc->Encrypt(keyPair.publicKey, pt_size);
-    
+    ct_size->SetSlots(1);
     TOC(t);
     std::cout << "Plaintext encrypted! Time used: " << TOC(t) << "ms" << std::endl;
 
@@ -241,6 +240,17 @@ int main() {
 
     std::cout << "Coefficients calcuated! Time used: " << TOC(t) << "ms" << std::endl;
 
+    // Plaintext pt_b1, pt_b2, pt_sig_xy, ppt_size;
+    // cc->Decrypt(keyPair.secretKey, ct_size, &ppt_size);
+    // cc->Decrypt(keyPair.secretKey, ct_sig_xy, &pt_sig_xy);
+    // cc->Decrypt(keyPair.secretKey, ct_b1, &pt_b1);
+    // cc->Decrypt(keyPair.secretKey, ct_b2, &pt_b2);
+    // std::cout << "sigxy: " << pt_sig_xy << std::endl;
+    // std::cout << "size: " << ppt_size << std::endl;
+    // std::cout << "b1: " << pt_b1 << std::endl;
+    // std::cout << "b2: " << pt_b2 << std::endl;
+
+
     // Decrypt the results
     Plaintext pt_a;
     Plaintext pt_b;
@@ -257,19 +267,19 @@ int main() {
 
     // ==== This if for customer side ======
     std::cout << "\nResults of homomorphic computations" << std::endl;
-    std::cout << "a: " << pt_a << std::endl;
-    std::cout << "b: " << pt_b << std::endl;
-    std::cout << "div: " << pt_div << std::endl;
+    std::cout << "a: " << pt_a;
+    std::cout << "b: " << pt_b;
+    std::cout << "div: " << pt_div;
     // y = a/div + (b/div)x
     // Get our integer back
-    int64_t a = pt_a->GetPackedValue()[0];
-    int64_t b = pt_b->GetPackedValue()[0];
-    int64_t div = pt_div->GetPackedValue()[0];
+    double a = pt_a->GetCKKSPackedValue()[0].real();
+    double b = pt_b->GetCKKSPackedValue()[0].real();
+    double div = pt_div->GetCKKSPackedValue()[0].real();
 
     // As BFV does not support floating point calculations,
     // we leave it to customer to do this.
     double intercept = (double)a / div * INC_FACTOR;
-    double coef      = (double)b / div * INC_FACTOR;
+    double coef      = (double)b / div;
     std::cout << "inter, coef: " << intercept << ", " << coef << std::endl;
 
     return 0;
