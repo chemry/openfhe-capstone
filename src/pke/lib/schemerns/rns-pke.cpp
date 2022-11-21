@@ -100,7 +100,7 @@ DecryptResult PKERNS::Decrypt(ConstCiphertext<DCRTPoly> ciphertext, const Privat
     if (sizeQl == 1)
         *plaintext = b.GetElementAtIndex(0);
     else
-        OPENFHE_THROW(math_error, "Decryption failure: No towers left; consider increasing the depth.");
+        OPENFHE_THROW(math_error, "Decryption failure: ; consider increasing the depth.");
 
     return DecryptResult(plaintext->GetLength());
 }
