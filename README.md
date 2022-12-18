@@ -1,104 +1,27 @@
-OpenFHE - Open-Source Fully Homomorphic Encryption Library
+OpenFHE - CMU Capstone Linear Regression Implmentation
 =====================================
 
-Fully Homomorphic Encryption (FHE) is a powerful cryptographic primitive that enables performing computations over encrypted data without having access to the secret key.
-OpenFHE is an open-source FHE library that includes efficient implementations of all common FHE schemes:
-  * Brakerski/Fan-Vercauteren (BFV) scheme for integer arithmetic
-  * Brakerski-Gentry-Vaikuntanathan (BGV) scheme for integer arithmetic
-  * Cheon-Kim-Kim-Song (CKKS) scheme for real-number arithmetic (includes approximate bootstrapping)
-  * Ducas-Micciancio (DM) and Chillotti-Gama-Georgieva-Izabachene (CGGI) schemes for Boolean circuit evaluation
-
-OpenFHE also includes the following multiparty extensions of FHE:
-  * Threshold FHE for BGV, BFV, and CKKS schemes
-  * Proxy Re-Encryption for BGV, BFV, and CKKS schemes
-
-## Links and Resources
-
- * [OpenFHE documentation](https://openfhe-development.readthedocs.io/en/latest/)
- * [Design paper for OpenFHE](https://eprint.iacr.org/2022/915)
- * [OpenFHE website](https://openfhe.org)
- * [Community forum for OpenFHE](https://openfhe.discourse.group/)
- * [OpenFHE Release Notes](https://github.com/openfheorg/openfhe-development/blob/main/docs/static_docs/Release_Notes.md)
- * [Quickstart](https://openfhe-development.readthedocs.io/en/latest/sphinx_rsts/intro/quickstart.html)
- * [BSD 2-Clause License](LICENSE)
- * [Contributing to OpenFHE](https://openfhe-development.readthedocs.io/en/latest/sphinx_rsts/contributing/contributing.html)
- * [Openfhe-development Github Issues](https://github.com/openfheorg/openfhe-development/issues)
- * To report security vulnerabilities, please email us at contact@openfhe.org
-
+## Introduction
+This repository is cloned from the [OpenFHE](https://github.com/openfheorg/openfhe-development) official github repository and modified based on the source. We implemented Linear regression on BFV and CKKS scheme. As well as gradient descent version of OpenFHE with CKKS.
 
 ## Installation
-
-Refer to our General Installation Information: [readthedocs](https://openfhe-development.readthedocs.io/en/latest/sphinx_rsts/intro/installation/installation.html) for more information
-
-Or refer to the following for your specific operating system:
-
-- [Linux](https://openfhe-development.readthedocs.io/en/latest/sphinx_rsts/intro/installation/linux.html)
-
-- [MacOS](https://openfhe-development.readthedocs.io/en/latest/sphinx_rsts/intro/installation/macos.html)
-
-- [Windows](https://openfhe-development.readthedocs.io/en/latest/sphinx_rsts/intro/installation/windows.html)
-
-
-## Code Examples
-
-To get familiar with the main API of OpenFHE, we recommend looking at the code of the following examples:
-   1. FHE for arithmetic over integers (BFV):
-       1. [Simple Code Example](https://github.com/openfheorg/openfhe-development/blob/main/src/pke/examples/simple-integers.cpp)
-       2. [Simple Code Example with Serialization](https://github.com/openfheorg/openfhe-development/blob/main/src/pke/examples/simple-integers-serial.cpp)
-   1. FHE for arithmetic over integers (BGV):
-       1. [Simple Code Example](https://github.com/openfheorg/openfhe-development/blob/main/src/pke/examples/simple-integers-bgvrns.cpp)
-       2. [Simple Code Example with Serialization](https://github.com/openfheorg/openfhe-development/blob/main/src/pke/examples/simple-integers-serial-bgvrns.cpp)
-   1. FHE for arithmetic over real numbers (CKKS):
-       1. [Simple Code Example](https://github.com/openfheorg/openfhe-development/blob/main/src/pke/examples/simple-real-numbers.cpp)
-       2. [Advanced Code Example](https://github.com/openfheorg/openfhe-development/blob/main/src/pke/examples/advanced-real-numbers.cpp)
-       2. [Advanced Code Example for High-Precision CKKS](https://github.com/openfheorg/openfhe-development/blob/main/src/pke/examples/advanced-real-numbers-128.cpp)
-       3. [Simple CKKS Bootstrapping Example](https://github.com/openfheorg/openfhe-development/blob/main/src/pke/examples/simple-ckks-bootstrapping.cpp)
-       4. [Advanced CKKS Bootstrapping Example](https://github.com/openfheorg/openfhe-development/blob/main/src/pke/examples/advanced-ckks-bootstrapping.cpp)
-   1. FHE for Boolean circuits (FHEW/TFHE):
-       1. [Simple Code Example](https://github.com/openfheorg/openfhe-development/blob/main/src/binfhe/examples/boolean.cpp)
-       2. [Code with JSON serialization](https://github.com/openfheorg/openfhe-development/blob/main/src/binfhe/examples/boolean-serial-json.cpp)
-       3. [Code with Binary Serialization](https://github.com/openfheorg/openfhe-development/blob/main/src/binfhe/examples/boolean-serial-binary.cpp)
-   1. Threshold FHE:
-       1. [Code Example for BGV, BFV, and CKKS](https://github.com/openfheorg/openfhe-development/blob/main/src/pke/examples/threshold-fhe.cpp)
-
-## Code of Conduct
-
-In the interest of fostering an open and welcoming environment, we as contributors and maintainers pledge to making
-participation in our project and our community a harassment-free experience for everyone, regardless of age, body size,
-disability, ethnicity, sex characteristics, gender identity and expression, level of experience, education,
-socio-economic status, nationality, personal appearance, race, religion, or sexual identity and orientation.
-
-
-OpenFHE is a community-driven open source project developed by a diverse group of
-[contributors](https://openfhe-development.readthedocs.io/en/latest/sphinx_rsts/misc/contributors.html). The OpenFHE leadership has made a strong commitment to creating an open,
-inclusive, and positive community. Please read our
-[Code of Conduct](https://openfhe-development.readthedocs.io/en/latest/sphinx_rsts/misc/code_of_conduct.html?highlight=code%20of%20) for guidance on how to interact with others in a way that
-makes our community thrive.
-
-## Call for Contributions
-
-We welcome all contributions including but not limited to:
-
-- [reporting issues](https://github.com/openfheorg/openfhe-development/issues)
-- addressing [bugs](https://github.com/openfheorg/openfhe-development/issues) big or small. We label issues to help you filter them to your skill level.
-- documentation changes
-- talks and seminars using OpenFHE
-
-## How to Cite OpenFHE
-
-To cite OpenFHE in academic papers, please use the following BibTeX entry.
-
+On a Ubuntu Linux machine with `cmake` version `3.22.1` and `make` version `4.3`, `gcc` version `11.3.0`, the following command builds successfully.
 ```
-@misc{OpenFHE,
-      author = {Ahmad Al Badawi and Jack Bates and Flavio Bergamaschi and David Bruce Cousins and Saroja Erabelli and Nicholas Genise and Shai Halevi and Hamish Hunt and Andrey Kim and Yongwoo Lee and Zeyu Liu and Daniele Micciancio and Ian Quah and Yuriy Polyakov and Saraswathy R.V. and Kurt Rohloff and Jonathan Saylor and Dmitriy Suponitsky and Matthew Triplett and Vinod Vaikuntanathan and Vincent Zucca},
-      title = {OpenFHE: Open-Source Fully Homomorphic Encryption Library},
-      howpublished = {Cryptology ePrint Archive, Paper 2022/915},
-      year = {2022},
-      note = {\url{https://eprint.iacr.org/2022/915}},
-      url = {https://eprint.iacr.org/2022/915}
-}
+mkdir OpenFHE
+cd OpenFHE
+git clone https://github.com/chemry/openfhe-capstone.git
+cd openfhe-capstone
+mkdir build
+cd build
+cmake ..
+make
+```
+After build, the following binary can be executed to see the results of linear regression outputs:
+```
+cd ..
+./build/bin/examples/pke/linear-regression
+./build/bin/examples/pke/linear-regression-ckks
+./build/bin/examples/pke/linear-regression-gd-ckks
 ```
 
-## Acknowledgments ##
-
-Distribution Statement "A" (Approved for Public Release, Distribution Unlimited). This work is supported in part by DARPA through HR0011-21-9-0003 and HR0011-20-9-0102. The views, opinions, and/or findings expressed are those of the author(s) and should not be interpreted as representing the official views or policies of the Department of Defense or the U.S. Government.
+The code are located at [capstone](/src/pke/capstone/).
