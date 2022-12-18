@@ -39,7 +39,7 @@
 
 using namespace lbcrypto;
 
-#define MAX_ENTRY 16384
+size_t MAX_ENTRY = 16384;
 #define INC_FACTOR 10000
 
 const char* file_small = "/afs/andrew.cmu.edu/usr24/jiachend/public/cleaned_small_user_data.csv";
@@ -118,41 +118,33 @@ void readFile(const char* filename, data_t *data) {
     myfile.close();
 }
 
-int main() {
+int main(int argc, char **argv) {
+    if (argc > 1) {
+        MAX_ENTRY = atoi(argv[1]);
+    }
+
     data_t *data = new data_t;
     init_data(data);
     for(int i = 0; i < 100; i++)
         readFile(file_small, data);
     
-    std::cout << "DATA SIZE: " << data->size << std::endl;
+    // std::cout << "DATA SIZE: " << data->size << std::endl;
 
     usint batch_size = data->size;
 
     // Sample Program: Step 1 - Set CryptoContext
     CCParams<CryptoContextCKKSRNS> parameters;
-    /**
-     * @brief We want to use a very large prime so that every intermediate
-     * result will not be moduled? As trying a small module produce incorrect
-     * output, this prime is found in:
-     * https://oeis.org/A182300
-     * 
-     * Weird enough.. though.
-     * 
-     * @todo Find a weirdly big prime number satisfy (p-1)/32768 is integer?
-     * @todo Dig into more about what is the use of a integer here?
-     */
-    // TODO: 
-    // Dig into more about what this is about?
-    // parameters.SetPlaintextModulus(536903681);
+
     parameters.SetBatchSize(batch_size);
-    // We have at most 3 multiplication depth for linear regression.. I guess?
+    // We have 3 multiplications for linear regression.
+    // Making this larger will extremely slow down the computation, see gradient descent.
     parameters.SetMultiplicativeDepth(3);
     parameters.SetScalingModSize(52);
-    parameters.SetRingDim(32768);
+    parameters.SetRingDim(65536);
     
     CryptoContext<DCRTPoly> cc = GenCryptoContext(parameters);
     
-    std::cout << "CKKS scheme is using ring dimension " << cc->GetRingDimension() << std::endl << std::endl;
+    // std::cout << "CKKS scheme is using ring dimension " << cc->GetRingDimension() << std::endl << std::endl;
 
     // Enable features
     cc->Enable(PKE);
@@ -175,9 +167,9 @@ int main() {
     cc->EvalSumKeyGen(keyPair.secretKey);
 
     TimeVar t;
-    TIC(t);
+    // TIC(t);
     // Sample Program: Step 3 - Encryption
-    std::cout << "Encrypting plaintexts..." << std::endl;
+    // std::cout << "Encrypting plaintexts..." << std::endl;
     // Plaint text for age and income
     Plaintext pt_age    = cc->MakeCKKSPackedPlaintext(data->age);
     Plaintext pt_income = cc->MakeCKKSPackedPlaintext(data->income);
@@ -189,7 +181,7 @@ int main() {
      * @todo Try a better way to do multiplication between ciphertext
      * and plain text.
      */
-    std::vector<double> size_double(MAX_ENTRY, batch_size);
+    std::vector<double> size_double((double)MAX_ENTRY, batch_size);
     Plaintext pt_size   = cc->MakeCKKSPackedPlaintext(size_double);
     
     // The encoded vectors are encrypted
@@ -197,13 +189,13 @@ int main() {
     auto ct_income = cc->Encrypt(keyPair.publicKey, pt_income);
     auto ct_size   = cc->Encrypt(keyPair.publicKey, pt_size);
     ct_size->SetSlots(1);
-    TOC(t);
-    std::cout << "Plaintext encrypted! Time used: " << TOC(t) << "ms" << std::endl;
+    // TOC(t);
+    // std::cout << "Plaintext encrypted! Time used: " << TOC(t) << "ms" << std::endl;
 
     // Sample Program: Step 4 - Evaluation
     TIC(t);
     // Calculate coefficients
-    std::cout << "Calculating coefficients..." << std::endl;
+    // std::cout << "Calculating coefficients..." << std::endl;
     auto ct_sigx   = cc->EvalSum(ct_age, batch_size);
     /** 
      * @brief I'm not sure whether is useful for setslots here.. 
@@ -238,7 +230,7 @@ int main() {
     auto ct_div2   = cc->EvalMult(ct_sigx, ct_sigx);
     auto ct_div    = cc->EvalSub(ct_div1, ct_div2);
 
-    std::cout << "Coefficients calcuated! Time used: " << TOC(t) << "ms" << std::endl;
+    std::cout << TOC(t) << std::endl;
 
     // Plaintext pt_b1, pt_b2, pt_sig_xy, ppt_size;
     // cc->Decrypt(keyPair.secretKey, ct_size, &ppt_size);
@@ -263,7 +255,6 @@ int main() {
     pt_a->SetLength(1);
     pt_b->SetLength(1);
     pt_div->SetLength(1);
-
 
     // ==== This if for customer side ======
     std::cout << "\nResults of homomorphic computations" << std::endl;

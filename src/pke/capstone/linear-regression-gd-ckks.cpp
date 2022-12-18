@@ -133,20 +133,7 @@ int main() {
 
     // Sample Program: Step 1 - Set CryptoContext
     CCParams<CryptoContextCKKSRNS> parameters;
-    /**
-     * @brief We want to use a very large prime so that every intermediate
-     * result will not be moduled? As trying a small module produce incorrect
-     * output, this prime is found in:
-     * https://oeis.org/A182300
-     * 
-     * Weird enough.. though.
-     * 
-     * @todo Find a weirdly big prime number satisfy (p-1)/32768 is integer?
-     * @todo Dig into more about what is the use of a integer here?
-     */
-    // TODO: 
-    // Dig into more about what this is about?
-    // parameters.SetPlaintextModulus(536903681);
+
     SecretKeyDist secretKeyDist = UNIFORM_TERNARY;
     parameters.SetSecretKeyDist(secretKeyDist);
 
@@ -164,6 +151,13 @@ int main() {
     CryptoContext<DCRTPoly> cc = GenCryptoContext(parameters);
     
     std::cout << "CKKS scheme ring dimension " << cc->GetRingDimension() << std::endl;
+    /**
+     * Bootstrapping is to reduce the level of multiplication depth.
+     * 
+     * We actually does not use bootstrapping here, as we tested it and seems
+     * it does not have a good performace, it just messed up the precisions 
+     * and the results. But we leave it here to show case some API usage.
+     */  
     std::cout << FHECKKSRNS::GetBootstrapDepth(9, levelBudget, secretKeyDist) << std::endl;
     // Enable features
     cc->Enable(PKE);
@@ -171,7 +165,7 @@ int main() {
     cc->Enable(LEVELEDSHE);
     cc->Enable(ADVANCEDSHE);
     cc->Enable(FHE);
-
+    // Setup bootstrapping
     cc->EvalBootstrapSetup(levelBudget, bsgsDim, batch_size);
 
 
@@ -229,7 +223,7 @@ int main() {
     // Calculate coefficients
     std::cout << "Calculating coefficients..." << std::endl;
     
-
+    /* Number of iterations */
     int epoches = 15;
     for(int iter = 0; iter < epoches; iter++) {
 
@@ -261,6 +255,9 @@ int main() {
         std::cout << "Depth m: " << ct_m->GetLevel();
         std::cout << " Depth c: " << ct_c->GetLevel();
         std::cout << std::endl;
+        /* We won't achieve here, but if u increase the number of iterations
+         * it will reach here. But the result is not satisfying, so we don't use it.
+         */
         if(ct_m->GetLevel() > 30) {
             ct_m = cc->EvalBootstrap(ct_m);
             ct_c = cc->EvalBootstrap(ct_c);

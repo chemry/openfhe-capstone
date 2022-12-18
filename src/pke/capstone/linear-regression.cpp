@@ -39,9 +39,12 @@
 
 using namespace lbcrypto;
 
-#define MAX_ENTRY 4000
-#define INC_FACTOR 100
+/* Number of rows of data*/
+static size_t MAX_ENTRY = 400;
+/* This factor is used to scale the original data to avoid intermediate result overflow */
+#define INC_FACTOR 1
 
+/* Path to the csv file we want, should be modified to other path if needed. */
 const char* file_small = "/afs/andrew.cmu.edu/usr24/jiachend/public/cleaned_small_user_data.csv";
 
 typedef struct {
@@ -118,16 +121,19 @@ void readFile(const char* filename, data_t *data) {
     myfile.close();
 }
 
-int main() {
-    std::cout << "OpenFHE with BFV" << std::endl;
+int main(int argc, char **argv) {
+    if (argc > 1) {
+        MAX_ENTRY = atoi(argv[1]);
+    }
+
+    // std::cout << "OpenFHE with BFV" << std::endl;
 
     data_t *data = new data_t;
     init_data(data);
     for(int i = 0; i < 10; i++)
         readFile(file_small, data);
     
-    std::cout << "DATA SIZE: " << data->size << std::endl;
-
+    // std::cout << "DATA SIZE: " << data->size << std::endl;
     usint batch_size = MAX_ENTRY;
 
     // Sample Program: Step 1 - Set CryptoContext
@@ -138,10 +144,9 @@ int main() {
      * output, this prime is found in:
      * https://oeis.org/A182300
      * 
-     * Weird enough.. though.
      * 
-     * @todo Find a weirdly big prime number satisfy (p-1)/32768 is integer?
-     * @todo Dig into more about what is the use of a integer here?
+     * @todo Find a big prime number satisfy (p-1)/32768 is integer, currently this
+     *       140737471578113 prime is pretty large enough.
      */
     // TODO: 
     // Dig into more about what this is about?
@@ -176,9 +181,9 @@ int main() {
     cc->EvalSumKeyGen(keyPair.secretKey);
 
     TimeVar t;
-    TIC(t);
+    // TIC(t);
     // Sample Program: Step 3 - Encryption
-    std::cout << "\nEncrypting plaintexts..." << std::endl;
+    // std::cout << "\nEncrypting plaintexts..." << std::endl;
     // Plaint text for age and income
     Plaintext pt_age    = cc->MakePackedPlaintext(data->age);
     Plaintext pt_income = cc->MakePackedPlaintext(data->income);
@@ -190,7 +195,7 @@ int main() {
      * @todo Try a better way to do multiplication between ciphertext
      * and plain text.
      */
-    std::vector<int64_t> size_int = {MAX_ENTRY};
+    std::vector<int64_t> size_int = {(int64_t) MAX_ENTRY};
     Plaintext pt_size   = cc->MakePackedPlaintext(size_int);
     
     // The encoded vectors are encrypted
@@ -198,19 +203,18 @@ int main() {
     auto ct_income = cc->Encrypt(keyPair.publicKey, pt_income);
     auto ct_size   = cc->Encrypt(keyPair.publicKey, pt_size);
     
-    TOC(t);
-    std::cout << "Plaintext encrypted! Time used: " << TOC(t) << "ms" << std::endl;
+    // TOC(t);
+    // std::cout << "Plaintext encrypted! Time used: " << TOC(t) << "ms" << std::endl;
 
     // Sample Program: Step 4 - Evaluation
     TIC(t);
     // Calculate coefficients
-    std::cout << "Calculating coefficients..." << std::endl;
+    // std::cout << "Calculating coefficients..." << std::endl;
     auto ct_sigx   = cc->EvalSum(ct_age, batch_size);
     /** 
-     * @brief I'm not sure whether is useful for setslots here.. 
-     * it seems not quite useful. Since Eval Sum produces
-     * an array like: [sum(0,n), sum(1,n), sum(2,n)... ], where
-     * the rest of array seems useless.
+     * @brief Eval Sum produces an array like: [sum(0,n), sum(1,n), sum(2,n)... ], 
+     * where the rest of array seems useless, so we use setslots to just
+     * use the first "total sum".
      * 
      * @todo Found a better way to just keep the first element.
      */
@@ -239,7 +243,7 @@ int main() {
     auto ct_div2   = cc->EvalMult(ct_sigx, ct_sigx);
     auto ct_div    = cc->EvalSub(ct_div1, ct_div2);
 
-    std::cout << "Coefficients calcuated! Time used: " << TOC(t) << "ms" << std::endl;
+    std::cout << TOC(t) << std::endl;
 
     // Decrypt the results
     Plaintext pt_a;
@@ -266,7 +270,7 @@ int main() {
     int64_t b = pt_b->GetPackedValue()[0];
     int64_t div = pt_div->GetPackedValue()[0];
 
-    // As BFV does not support floating point calculations,
+    // As BFV does not support division,
     // we leave it to customer to do this.
     double intercept = (double)a / div * INC_FACTOR;
     double coef      = (double)b / div * INC_FACTOR;

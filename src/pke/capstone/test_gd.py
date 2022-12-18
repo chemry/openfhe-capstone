@@ -6,7 +6,7 @@ L = 0.0001  # The learning Rate
 epochs = 15  # The number of iterations to perform gradient descent
 m = 0
 c = 0
-
+print("Linear Regression Gradient Descent with Python")
 age = []
 income = []
 n = 256
@@ -39,7 +39,7 @@ for i in range(epochs):
     D_c = L * (-2.0/n) * sum(Y_dif)  # Derivative wrt c
     m = m - D_m  # Update m
     c = c - D_c  # Update c
-    print(i, m, c)
+    print("iter", i, "m", m, "c", c)
 
 """ m, c
 0 441.0486765625 9.713069531250001
